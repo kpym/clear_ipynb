@@ -19,6 +19,7 @@ Clear a Jupyter notebook:
 - clear cell outputs [except if --no-outputs]
 - clear cell metadata.scrolled [except if --no-scrolled]
 - clear cell execution counts [except if --no-execution-count]
+- clear metadate to keep only the standard parts [except if --keep-metadata]
 - remove empty code cells [except if --no-empty-code]
 - remove empty markdown cells [if --empty-markdown]
 - strip solutions (parts between comments)  [if --strip-solutions or -s]
@@ -35,6 +36,7 @@ parser.add_argument('-s', '--strip-solutions', action="store_true", help='strip 
 parser.add_argument('--no-scrolled', action="store_true", help='do not clear metadata.scrolled')
 parser.add_argument('--no-outputs', action="store_true", help='do not clear outputs')
 parser.add_argument('--no-execution-count', action="store_true", help='do not clear execution counts')
+parser.add_argument('--keep-metadata', action="store_true", help='do not clear the global metadata')
 parser.add_argument('--no-empty-code', action="store_true", help='do not remove empty code cells')
 parser.add_argument('--empty-markdown', action="store_true", help='remove empty markdown cells')
 parser.add_argument('--no-protect-cells', action="store_true", help='do not protect cells from deletion/edition')
@@ -66,6 +68,7 @@ if out_file == in_file:
 clear_scrolled = not argop['no_scrolled']
 clear_outputs = not argop['no_outputs']
 clear_execution_count = not argop['no_execution_count']
+clear_metadata = not argop['keep_metadata']
 empty_code = not argop['no_empty_code']
 empty_markdown = argop['empty_markdown']
 protect_cells = not argop['no_protect_cells']
@@ -90,12 +93,16 @@ number = {
     'removed' : {
         'empty code cells': 0,
         'empty markdown cells': 0,
+        'global metadata elements': 0,
     },
     'striped' : {
         "code" : 0,
         "markdown" : 0,
     }
 }
+# standard meta data to keep
+standard_meta_keys = ['kernelspec', 'language_info']
+
 # start cleanings
 if in_place or out_file:
     print(f"Cleaning {in_file}")
@@ -104,22 +111,22 @@ if "cells" in data:
     for cell in data["cells"]:
 
         # clear the outputs
-        if (clear_outputs) and ('outputs' in cell) and len(cell['outputs']) > 0:
+        if clear_outputs and ('outputs' in cell) and len(cell['outputs']) > 0:
             cell['outputs'].clear()
             number['cleared']['outputs'] += 1
-        if (clear_execution_count) and ('execution_count' in cell) and cell['execution_count'] is not None:
+        if clear_execution_count and ('execution_count' in cell) and cell['execution_count'] is not None:
             cell['execution_count'] = None
             number['cleared']['execution_count'] += 1
-        if (clear_scrolled):
+        if clear_scrolled:
             try:
                 del cell['metadata']['scrolled']
                 number['cleared']['scrolled'] += 1
             except KeyError:
                 pass
-        if (empty_code) and (cell['cell_type'] == "code") and (not cell['source']):
+        if empty_code and (cell['cell_type'] == "code") and (not cell['source']):
             cell.clear()
             number['removed']['empty code cells'] += 1
-        elif (empty_markdown) and (cell['cell_type'] == "markdown") and (not cell['source']):
+        elif empty_markdown and (cell['cell_type'] == "markdown") and (not cell['source']):
             cell.clear()
             number['removed']['empty markdown cells'] += 1
 
@@ -139,8 +146,15 @@ if "cells" in data:
                     number['striped'][cell['cell_type']] += 1
 
     # remove empty cells if any and if needed
-    if (empty_code) or (empty_markdown):
+    if empty_code or empty_markdown:
         data["cells"] = list(filter(None, data["cells"]))
+
+    # clear global metadata
+    if clear_metadata and "metadata" in data:
+        for key in data["metadata"]:
+            if not key in standard_meta_keys:
+                number['removed']['global metadata elements'] += 1
+        data["metadata"] = { key: data["metadata"][key] for key in standard_meta_keys if key in data["metadata"]}
 
 if in_place or out_file:
     for t in number:

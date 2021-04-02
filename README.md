@@ -6,12 +6,12 @@ The python script [clear_ipynb.py](clear_ipynb.py) can be used to clear (and str
 
 ### Examples
 
-- Clear all the outputs (+ execution counters + scrolled status), remove empty code cells (but not markdown ones). The result is saved in the original `example.ipynb` file without making a backup.
+- Clear all the outputs (+ execution counters + scrolled status), remove empty code cells (but not markdown ones), remove non standard global metadata (like `colab` for example). The result is saved in the original `example.ipynb` file without making a backup.
   ```bash
   ./clear_ipynb.py -i --no-backup example.ipynb
   ```
 
-- Clear "all" : the outputs (+ execution counters + scrolled status), remove the empty cells (code and markdown ones). All solutions are also removed from `homework_with_solutions.ipynb` and all cells are protected from removal, those not containing solutions are also protected from editing. The result is saved to the `homework.ipynb` file in the parent directory.
+- Clear "all" : the outputs (+ execution counters + scrolled status), remove the empty cells (code and markdown ones), remove non standard global metadata. All solutions are also removed from `homework_with_solutions.ipynb` and all cells are protected from removal, those not containing solutions are also protected from editing. The result is saved to the `homework.ipynb` file in the parent directory.
   ```bash
   ./clear_ipynb.py -a -o ../homework.ipynb homework_with_solutions.ipynb
   ```
@@ -21,14 +21,16 @@ The python script [clear_ipynb.py](clear_ipynb.py) can be used to clear (and str
 ```bash
 ./clear_ipynb.py --help
 usage: clear_ipynb.py [-h] [-o out.ipynb] [-i] [-a] [-s] [--no-scrolled]
-                      [--no-outputs] [--no-execution-count] [--no-empty-code]
-                      [--empty-markdown] [--no-protect-cells] [--no-backup]
+                      [--no-outputs] [--no-execution-count] [--keep-metadata]
+                      [--no-empty-code] [--empty-markdown]
+                      [--no-protect-cells] [--no-backup]
                       in.ipynb
 
 Clear a Jupyter notebook:
 - clear cell outputs [except if --no-outputs]
 - clear cell metadata.scrolled [except if --no-scrolled]
 - clear cell execution counts [except if --no-execution-count]
+- clear metadate to keep only the standard parts [except if --keep-metadata]
 - remove empty code cells [except if --no-empty-code]
 - remove empty markdown cells [if --empty-markdown]
 - strip solutions (parts between comments)  [if --strip-solutions or -s]
@@ -48,11 +50,11 @@ optional arguments:
   --no-scrolled         do not clear metadata.scrolled
   --no-outputs          do not clear outputs
   --no-execution-count  do not clear execution counts
+  --keep-metadata       do not clear the global metadata
   --no-empty-code       do not remove empty code cells
   --empty-markdown      remove empty markdown cells
   --no-protect-cells    do not protect cells from deletion/edition
   --no-backup           do not backup the original [valid only with -i]
-
 ```
 
 ## How it works
@@ -72,7 +74,11 @@ The Jupyter `.ipynb` files are `json` files with [the following structure](https
   },
   ... // more cells
  ],
- "metadata": {...},
+ "metadata": {
+    "kernelspec": {...},
+    "language_info": {...},
+    ...
+  },
  "nbformat": X,
  "nbformat_minor": Y
 }
