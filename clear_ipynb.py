@@ -2,19 +2,20 @@
 #
 # to use : [python|pypy] clear_ipynb.py -s --empty-markdown -o out.ipynb in.ipynb
 
-import os # to read/write files
-import codecs # to read/write UTF-8 files
-import sys # to print to stdout in UTF-8
-import argparse # to parse arguments
-import json # to parse the .ipynb which is a json file
-import re # to strip the solutions
+import os  # to read/write files
+import codecs  # to read/write UTF-8 files
+import sys  # to print to stdout in UTF-8
+import argparse  # to parse arguments
+import json  # to parse the .ipynb which is a json file
+import re  # to strip the solutions
+
 
 def print_error(message):
     print(f"{'':->21}\n -- !!!-- {message}\n{'':->21}")
 
+
 # create the argument parser
-parser = argparse.ArgumentParser(description=
-"""
+parser = argparse.ArgumentParser(description="""
 Clear a Jupyter notebook:
 - clear cell outputs [except if --no-outputs]
 - clear cell metadata.scrolled [except if --no-scrolled]
@@ -25,7 +26,7 @@ Clear a Jupyter notebook:
 - strip solutions (parts between comments)  [if --strip-solutions or -s]
     - in this case protect cells [except if --no-protect-cells] against deletion and edition
 """,
-formatter_class=argparse.RawTextHelpFormatter)
+                                 formatter_class=argparse.RawTextHelpFormatter)
 
 # get the arguments
 parser.add_argument('in_file', nargs=1, metavar="in.ipynb", help='the file name of jupyer notebook to clear')
@@ -85,19 +86,19 @@ except Exception as e:
 
 # set the counters
 number = {
-    'cleared' : {
+    'cleared': {
         'outputs': 0,
         'execution_count': 0,
         'scrolled': 0,
     },
-    'removed' : {
+    'removed': {
         'empty code cells': 0,
         'empty markdown cells': 0,
         'global metadata elements': 0,
     },
-    'striped' : {
-        "code" : 0,
-        "markdown" : 0,
+    'striped': {
+        'code': 0,
+        'markdown': 0,
     }
 }
 # standard meta data to keep
@@ -107,8 +108,8 @@ standard_meta_keys = ['kernelspec', 'language_info']
 if in_place or out_file:
     print(f"Cleaning {in_file}")
 
-if "cells" in data:
-    for cell in data["cells"]:
+if 'cells' in data:
+    for cell in data['cells']:
 
         # clear the outputs
         if clear_outputs and ('outputs' in cell) and len(cell['outputs']) > 0:
@@ -138,23 +139,23 @@ if "cells" in data:
             if ('source' in cell) and cell['source'] and cell['cell_type'] in number['striped']:
                 old_source = json.dumps(cell['source'])
                 re_solutions = r'[,\s\n]*"\s*(#|<!)\s*--- .*?solution[\d\D]*?"\s*(#|<!)\s*--- .*?solution.*?"'
-                new_source = re.sub(re_solutions, r"", old_source, 0, re.MULTILINE).replace('[,','[')
+                new_source = re.sub(re_solutions, r"", old_source, 0, re.MULTILINE).replace('[,', '[')
                 if old_source != new_source:
                     cell['source'] = json.loads(new_source)
                     if protect_cells:
-                        del cell['metadata']['editable'] # can be edited but not deleted
+                        del cell['metadata']['editable']  # can be edited but not deleted
                     number['striped'][cell['cell_type']] += 1
 
     # remove empty cells if any and if needed
     if empty_code or empty_markdown:
-        data["cells"] = list(filter(None, data["cells"]))
+        data['cells'] = list(filter(None, data['cells']))
 
     # clear global metadata
-    if clear_metadata and "metadata" in data:
-        for key in data["metadata"]:
+    if clear_metadata and 'metadata' in data:
+        for key in data['metadata']:
             if not key in standard_meta_keys:
                 number['removed']['global metadata elements'] += 1
-        data["metadata"] = { key: data["metadata"][key] for key in standard_meta_keys if key in data["metadata"]}
+        data['metadata'] = {key: data['metadata'][key] for key in standard_meta_keys if key in data['metadata']}
 
 if in_place or out_file:
     for t in number:
@@ -166,7 +167,7 @@ if in_place:
     if backup_original:
         try:
             backup = re.sub(r"(\.ipynb)$", r"_bak.ipynb", in_file)
-            os.rename(in_file,backup)
+            os.rename(in_file, backup)
             print(f"Backup in {backup}")
         except Exception as e:
             print_error(f"Error during the rename : {in_file} »»» {backup}")
