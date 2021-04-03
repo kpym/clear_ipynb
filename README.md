@@ -19,8 +19,7 @@ The python script [clear_ipynb.py](clear_ipynb.py) can be used to clear (and str
 ### Help
 
 ```bash
-./clear_ipynb.py --help
-usage: clear_ipynb.py [-h] [-o out.ipynb] [-i] [-a] [-s] [--no-scrolled]
+usage: clear_ipynb.py [-h] [-o out.ipynb] [-i] [-a] [-s] [-v] [--no-scrolled]
                       [--no-outputs] [--no-execution-count] [--keep-metadata]
                       [--no-empty-code] [--empty-markdown]
                       [--no-protect-cells] [--no-backup]
@@ -47,6 +46,7 @@ optional arguments:
   -a, --all             maximal cleaning = -s --empty-markdown
   -s, --strip-solutions
                         strip the solutions, and save to indicated file
+  -v, --verbose         provide additional informations
   --no-scrolled         do not clear metadata.scrolled
   --no-outputs          do not clear outputs
   --no-execution-count  do not clear execution counts

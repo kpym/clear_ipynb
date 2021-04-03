@@ -34,6 +34,7 @@ parser.add_argument('-o', '--out-file', nargs=1, metavar="out.ipynb", help='save
 parser.add_argument('-i', '--in-place', action="store_true", help='edit file in-place, save backup as <filename>_bak.ipynb')
 parser.add_argument('-a', '--all', action="store_true", help='maximal cleaning = -s --empty-markdown')
 parser.add_argument('-s', '--strip-solutions', action="store_true", help='strip the solutions, and save to indicated file')
+parser.add_argument('-v', '--verbose', action="store_true", help='provide additional informations')
 parser.add_argument('--no-scrolled', action="store_true", help='do not clear metadata.scrolled')
 parser.add_argument('--no-outputs', action="store_true", help='do not clear outputs')
 parser.add_argument('--no-execution-count', action="store_true", help='do not clear execution counts')
@@ -74,6 +75,7 @@ empty_code = not argop['no_empty_code']
 empty_markdown = argop['empty_markdown']
 protect_cells = not argop['no_protect_cells']
 backup_original = not argop['no_backup']
+verbose = argop['verbose']
 
 # read the .ipynb file to `data` variable
 try:
@@ -106,7 +108,8 @@ standard_meta_keys = ['kernelspec', 'language_info']
 
 # start cleanings
 if in_place or out_file:
-    print(f"Cleaning {in_file}")
+    in_place_str = " (in place)" if in_place else ""
+    print(f"Cleaning{in_place_str} {in_file}")
 
 if 'cells' in data:
     for cell in data['cells']:
@@ -157,10 +160,16 @@ if 'cells' in data:
                 number['removed']['global metadata elements'] += 1
         data['metadata'] = {key: data['metadata'][key] for key in standard_meta_keys if key in data['metadata']}
 
+# Print the modifications
 if in_place or out_file:
+    changes = 0
     for t in number:
         for k in number[t]:
-            print(f"Number of {t} '{k}': {number[t][k]}")
+            if number[t][k] > 0 or verbose:
+                changes += 1
+                print(f"Number of {t} '{k}': {number[t][k]}")
+    if changes == 0 and not verbose:
+        print("File was already clean.")
 
 # if file is replaced (with cleared cells, but keeping the solutions)
 if in_place:
@@ -168,17 +177,19 @@ if in_place:
         try:
             backup = re.sub(r"(\.ipynb)$", r"_bak.ipynb", in_file)
             os.rename(in_file, backup)
-            print(f"Backup in {backup}")
+            if verbose:
+                print(f"Backup in {backup}")
         except Exception as e:
             print_error(f"Error during the rename : {in_file} »»» {backup}")
             print(f"Error message: {e}")
-    else:
+    elif verbose:
         print("No backup.")
 
     try:
         with codecs.open(in_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=1, sort_keys=True, ensure_ascii=False)
-        print(f"Save cleaned version in {in_file}")
+        if verbose:
+            print(f"Save cleaned version in {in_file}")
     except Exception as e:
         print_error(f"Error saving file : {in_file}")
         print(f"Error message: {e}")
@@ -190,7 +201,8 @@ if out_file:
     try:
         with codecs.open(out_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=1, sort_keys=True, ensure_ascii=False)
-        print(f"Save cleaned version in {out_file}")
+        if verbose:
+            print(f"Save cleaned version in {out_file}")
     except Exception as e:
         print_error(f"Error saving file : {out_file}")
         print(f"Error message: {e}")
